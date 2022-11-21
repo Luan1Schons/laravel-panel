@@ -25,6 +25,18 @@ class AuthenticatedSessionController extends Controller
         ]);
     }
 
+    public function redirectTo()
+    {
+        $route = null;
+        if (Auth::user()->hasRole('admin')) {
+            $route = '/admin/dashboard';
+        }else if(Auth::user()->hasRole('habbo')){
+            $route = '/habbo/dashboard';
+        }else{
+            $route ='/user/dashboard';
+        }
+        return redirect()->intended($route);
+    }
     /**
      * Handle an incoming authentication request.
      *
@@ -37,7 +49,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        $this->redirectTo();
     }
 
     /**

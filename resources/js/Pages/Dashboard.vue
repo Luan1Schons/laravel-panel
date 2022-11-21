@@ -14,33 +14,43 @@ export default {
     },
     data() {
         return {
-            containers: []
+            containers: [],
+            emulatorLog: '',
+            habbo: {},
+            metrics: [],
         }
     },
+    props: {
+        habboData: Object,
+    },
     mounted() {
+
+        this.habbo = this.habboData;
         // or with options
         toast.success("Painel carregado com sucesso...", {
             timeout: 2000
         });
         this.getContainers();
+        this.getEmulatorLogs();
     },
     methods: {
         ligarInstancia: _.debounce(function (event) {
-            event.target.disabled = true;
+            this.spinnerButtonLoading(event);
             axios.get(route('habbo.actions.containers.start'))
                 .then(response => {
-                    console.log(response.data);
                     if (response.data.status == 0) {
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
                         toast.error(response.data.message, {
                             timeout: 2000
                         });
                     } else {
-                        console.log(response.data);
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
                         toast.success(response.data.message, {
                             timeout: 2000
                         });
+
                     }
 
                     this.getContainers();
@@ -52,21 +62,39 @@ export default {
                     });
                 });
         }, 1000),
-        desligarInstancia: _.debounce(function (event) {
+        spinnerButtonLoading: function (event) {
             event.target.disabled = true;
+            let spinner = event.target.getElementsByClassName('spinner-border')[0];
+            if (spinner !== "undefined") {
+                spinner.style.removeProperty('display');
+            }
+        },
+        spinnerButtonRemoveLoading: function (event) {
+            event.target.disabled = true;
+            let spinner = event.target.getElementsByClassName('spinner-border')[0];
+            if (spinner !== "undefined") {
+                spinner.style.display = "none";
+            }
+        },
+        desligarInstancia: _.debounce(function (event) {
+            this.spinnerButtonLoading(event);
             axios.get(route('habbo.actions.containers.stop'))
                 .then(response => {
                     console.log(response.data);
                     if (response.data.status == 0) {
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
                         toast.error(response.data.message, {
                             timeout: 2000
                         });
+                        this.emulatorLog = "";
                     } else {
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
                         toast.success(response.data.message, {
                             timeout: 2000
                         });
+                        this.emulatorLog = "";
                     }
 
                     this.getContainers()
@@ -80,23 +108,27 @@ export default {
         }, 1000),
         ligarEmulador: _.debounce(function (event) {
             event.target.disabled = true;
+            this.spinnerButtonLoading(event);
             axios.get(route('habbo.actions.emulador.start'))
                 .then(response => {
 
                     if (response.data.status == 0) {
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
                         toast.error(response.data.message, {
                             timeout: 2000
                         });
                     } else {
                         event.target.disabled = false;
-                        console.log(response.data);
+                        this.habbo.emulator_status = 'online';
+                        this.spinnerButtonRemoveLoading(event);
                         toast.success(response.data.message, {
                             timeout: 2000
                         });
                     }
 
-                    this.getContainers()
+                    this.getContainers();
+                    this.getEmulatorLogs();
                 })
                 .catch(error => {
                     console.log(error);
@@ -108,23 +140,62 @@ export default {
         }, 1000),
         desligarEmulador: _.debounce(function (event) {
             event.target.disabled = true;
+            this.spinnerButtonLoading(event);
             axios.get(route('habbo.actions.emulador.stop'))
                 .then(response => {
                     if (response.data.status == 0) {
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
                         toast.error(response.data.message, {
                             timeout: 2000
                         });
                     } else {
-                        console.log(response.data);
                         event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
+                        this.emulatorLog = "";
+                        this.habbo.emulator_status = 'offline';
                         toast.success(response.data.message, {
                             timeout: 2000
                         });
                     }
 
                     this.getContainers()
+                    this.getEmulatorLogs();
 
+                })
+                .catch(error => {
+                    console.log(error);
+                    event.target.disabled = false;
+                    toast.error('Erro ao ligar o emulador', {
+                        timeout: 2000
+                    });
+                });
+        }, 1000),
+        reiniciarEmulador: _.debounce(function (event) {
+            event.target.disabled = true;
+            this.spinnerButtonLoading(event);
+            axios.get(route('habbo.actions.emulador.restart'))
+                .then(response => {
+                    if (response.data.status == 0) {
+                        event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
+                        this.habbo.emulator_status = 'offline';
+                        this.emulatorLog = "";
+                        toast.error(response.data.message, {
+                            timeout: 2000
+                        });
+                    } else {
+                        event.target.disabled = false;
+                        this.spinnerButtonRemoveLoading(event);
+                        this.emulatorLog = "";
+                        this.habbo.emulator_status = 'online';
+                        toast.success(response.data.message, {
+                            timeout: 2000
+                        });
+                    }
+
+                    this.getContainers();
+                    this.getEmulatorLogs();
                 })
                 .catch(error => {
                     console.log(error);
@@ -142,6 +213,24 @@ export default {
                         $.each(response.data.message, function (index, value) {
                             containers.push(JSON.parse(value))
                         });
+
+                        $.each(containers, function (index, value) {
+
+                            axios.get(route('habbo.actions.containers.metrics', { id: value.ID }))
+                                .then(response => {
+                                    if (response.data.status == 1) {
+                                        let metrics = JSON.parse(response.data.message);
+                                        document.getElementById('cpu-metric-' + metrics.ID).innerHTML = metrics.CPUPerc;
+                                        document.getElementById('ram-metric-' + metrics.ID).innerHTML = metrics.MemUsage;
+                                        console.log(metrics);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.log(error);
+                                });
+
+
+                        });
                         this.containers = containers;
                     } else {
                         this.container = [];
@@ -150,7 +239,20 @@ export default {
                 .catch(error => {
                     console.log(error);
                 });
-        }
+        },
+        getEmulatorLogs: function () {
+            axios.get(route('habbo.actions.emulador.log'))
+                .then(response => {
+                    console.log(response.data);
+                    if (response.data.status == 1) {
+                        this.emulatorLog = response.data.message
+                    }
+                })
+                .catch(error => {
+                    console.log('error', error);
+                });
+
+        },
     }
 };
 </script>
@@ -230,30 +332,103 @@ export default {
                         <!-- DIRECT CHAT -->
                         <div class="card direct-chat direct-chat-primary">
                             <div class="card-header">
-                                <h3 class="card-title">Emulador</h3>
+                                <h3 class="card-title">Console</h3>
                             </div>
                             <!-- /.card-header -->
-                            <div class="card-body p-2">
-                                <div class="bg-gray-100 rounded-md">
-                                    <div class="d-flex justify-end">
-                                        <div class="p-3">
-                                            <button class="btn bg-white m-2">Reiniciar</button>
-                                            <button class="btn bg-white m-2" @click="ligarEmulador">Ligar</button>
-                                            <button class="btn bg-white m-2" @click="desligarEmulador">Desligar</button>
-                                            <button class="btn bg-white m-2">Recompilar</button>
+                            <div class="card-body">
+                                <div class="d-flex justify-left items-center bg-gray-800 sticky w-full h-full">
+                                    <div class="w-4/12 bg-gray-700 h-24">
+                                        <div class="h-full w-full d-flex justify-center items-center">
+                                            <h1 class="text-2xl text-white font-bold">ARCTURUS</h1>
+                                        </div>
+                                    </div>
+                                    <div class="w-8/12 h-24">
+                                        <div class="d-flex justify-end">
+                                            <div class="p-3" v-if="habbo">
+                                                <button class="btn bg-white m-2" @click="reiniciarEmulador"
+                                                    :disabled="habbo.emulator_status == 'offline'">
+                                                    <div class="spinner-border text-primary h-5 w-5 mr-2"
+                                                        style="display: none;">
+                                                    </div>Reiniciar
+                                                </button>
+                                                <button class="btn bg-white m-2" @click="ligarEmulador"
+                                                    :disabled="habbo.emulator_status == 'online'">
+                                                    <div class="spinner-border text-primary h-5 w-5 mr-2"
+                                                        style="display: none;">
+                                                    </div>Ligar
+                                                </button>
+                                                <button class="btn bg-white m-2" @click="desligarEmulador"
+                                                    :disabled="habbo.emulator_status == 'offline'">
+                                                    <div class="spinner-border text-primary h-5 w-5 mr-2"
+                                                        style="display: none;">
+                                                    </div>Desligar
+                                                </button>
+                                                <!-- <button class="btn bg-white m-2">Recompilar</button> -->
+
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="bg-gray-900 border-b-2 rounded-b-3xl">
+                                    <div class="row">
+                                        <div class="w-full max-h-96 h-96 overflow-y-auto">
+                                            <div class="h-full text-white">
+                                                <div v-if="habbo.emulator_status == 'online'" class="pl-2 relative">
 
-                                <div class="bg-gray-900">
-                                    <div class="row p-2">
 
+                                                    <p class="text-xs text-white p-2" v-html="emulatorLog">
+                                                    </p>
+                                                </div>
+
+                                                <div v-else class="d-flex justify-center items-center h-full w-full">
+                                                    <h3 class="text-3xl text-white opacity-50">EMULADOR
+                                                        DESLIGADO</h3>
+                                                </div>
+
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <!--
+                            <div class="card-footer">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text" id="basic-addon1">RCON</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Comando"
+                                        aria-describedby="basic-addon1">
+                                </div>
+                            </div>
+                            -->
                             <!-- /.card-body-->
                         </div>
                         <!--/.direct-chat -->
+
+                        <!-- Table with habbo informations -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Informações</h3>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">NOME</th>
+                                            <th scope="col">PLANO</th>
+                                            <th scope="col">DATABASE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>{{ habbo.name }}</th>
+                                            <th>Básico</th>
+                                            <th>{{ habbo.mysql_database }}</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6">
                         <div class="row">
@@ -264,57 +439,123 @@ export default {
                                     </div>
                                     <div class="card-body p-0">
 
-                                        <div class="bg-gray-100">
+                                        <div class="bg-white">
                                             <div class="row p-2">
                                                 <div class="col-md-12">
                                                     <div class="d-flex justify-between items-center">
-                                                        <div class="p-2">
+
+                                                        <div class="p-2 w-6/12">
                                                             <p>Instância</p>
                                                             <small>Instância é um pacote de serviço que quando
                                                                 desligado, todos os serviços são desligados.</small>
                                                         </div>
-                                                        <div class="p-2">
-                                                            <button class="btn bg-white m-2"
-                                                                @click="ligarInstancia">Ligar</button>
-                                                            <button class="btn bg-white m-2"
-                                                                @click="desligarInstancia">Desligar</button>
+
+                                                        <div class="p-2 w-6/12">
+                                                            <div class="d-flex justify-end">
+                                                                <button
+                                                                    class="btn bg-blue-500 text-white m-2 d-flex justify-between items-center"
+                                                                    @click="ligarInstancia">
+                                                                    <div class="spinner-border text-primary h-5 w-5 mr-2"
+                                                                        style="display: none;">
+                                                                    </div> Ligar
+                                                                </button>
+                                                                <button
+                                                                    class="btn bg-red-500 text-white m-2 d-flex justify-between items-center"
+                                                                    @click="desligarInstancia">
+                                                                    <div class="spinner-border text-primary h-5 w-5 mr-2"
+                                                                        style="display: none;">
+                                                                    </div>
+                                                                    Desligar
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div v-if="containers">
-                                            <table class="table table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col">#</th>
-                                                        <th scope="col">IMAGEM</th>
-                                                        <th scope="col">TEMPO</th>
-                                                        <th scope="col">STATUS</th>
-                                                        <th scope="col">VOLUME</th>
-                                                        <th scope="col">AÇÃO</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="container, key in containers" :key="key">
-                                                        <th scope="row">{{ key }}</th>
-                                                        <td>{{ container.Names }}</td>
-                                                        <td>{{ container.RunningFor }}</td>
-                                                        <td><span v-if="container.State == 'running'"
-                                                                class="bg-green text-white rounded-xl px-2">Ligado</span><span
-                                                                v-else>Desligado</span></td>
-                                                        <td><span class="bg-blue-500 text-white rounded-xl px-2">{{
+                                            <div class="bg-gray-200">
+                                                <div class="flex gap-2 justify-center items-center">
+                                                    <div class="p-2 w-6/12">
+                                                        <p>Informações gráficas:</p>
+                                                    </div>
+                                                    <div class="p-2 w-6/12">
+                                                        <div class="d-flex justify-end gap-2">
+                                                    <div class="cpu flex gap-2 justify-start items-center">
+                                                        <div class="rounded-full h-5 w-5 bg-green-200"></div> Volume (Disco)
+                                                    </div>
+                                                    <div class="ram flex gap-2 justify-start items-center">
+                                                        <div class="rounded-full h-5 w-5 bg-yellow-200"></div> CPU
+                                                    </div>
+                                                    <div class="cpu flex gap-2 justify-start items-center">
+                                                        <div class="rounded-full h-5 w-5 bg-red-200"></div> RAM
+                                                    </div>
+                                                </div>
+                                                </div>
+                                                </div>
+                                                <div class="row p-2">
+                                                        <div class="card col-12 col-sm-12 col-md-4 col-lg-6 col-xl-2 h-2/5 m-3" v-for="container, key in containers" :key="key">
+                                                        <div class="image flex justify-center items-center p-2">
+                                                            <div class="rounded-full w-24 h-24 bg-blue-500 d-flex justify-center items-center">
+                                                                <i class="fa fa-server text-2xl text-white" aria-hidden="true"></i>
+                                                            </div>
+                                                        </div>
+
+                                                        <span class="text-center text-sm mb-2 max-w-prose ...">{{container.Image.substring(0,10)}}...</span>
+                                                        
+                                                        <span v-if="container.State == 'running'"
+                                                                class="bg-green text-white px-2 text-center">Ligado</span>
+                                                                
+                                                                <span class="bg-red text-white px-2 text-center"
+                                                                v-else>Desligado</span>
+
+                                                        <div class="mt-2">
+                                                            <div class="bg-green-200 rounded-xl px-2 text-black mb-2 text-sm text-center">
+                                                            <span>{{
                                                                 container.Size
                                                         }}</span>
-                                                        </td>
-                                                        <td><button class="btn bg-red-500 m-2 text-white"
-                                                                @click="desligarInstancia">Desligar</button> <button
-                                                                class="btn bg-yellow-500 m-2 text-white"
-                                                                @click="desligarInstancia">Reinstalar</button></td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                        </div>
+                                                            <div class="bg-yellow-200 rounded-xl px-2 text-black mb-2 text-sm text-center">
+                                                                <span :id="'cpu-metric-' + container.ID">
+                                                                    <div class="spinner-border spinner-border-sm text-gray-900 " role="status"></div></span>
+                                                            </div>
+                                                            <div class="bg-red-200 rounded-xl px-2 text-black mb-2 text-sm text-center">
+                                                                <span :id="'ram-metric-' + container.ID"><div class="spinner-border spinner-border-sm text-gray-900" role="status"></div></span>
+                                                            </div>
+                                                            <div class="d-flex justify-center items-center"
+                                                                v-if="container.Names == 'nitro'">
+                                                                <button class="text-blue-500 ml-2" @click="ligarContainer(container.Names)"><i
+                                                                        class="fa fa-arrow-up"
+                                                                        aria-hidden="true"></i></button>
+                                                                <button class="text-yellow-500 ml-2" @click="ligarContainer(container.Names)"><i
+                                                                        class="fa fa-cog"
+                                                                        aria-hidden="true"></i></button>
+                                                                <button class="text-red-500 ml-2" @click="desligarContainer(container.Names)"><i
+                                                                        class="fa fa-arrow-down"
+                                                                        aria-hidden="true"></i></button>
+                                                            </div> 
+
+                                                            <div class="d-flex justify-center items-center"
+                                                                v-else>
+                                                                <button class="text-gray-400 ml-2"
+                                                                    disabled><i
+                                                                        class="fa fa-arrow-up"
+                                                                        aria-hidden="true"></i></button>
+                                                                <button class="text-gray-400 ml-2"
+                                                                    disabled><i
+                                                                        class="fa fa-cog"
+                                                                        aria-hidden="true"></i></button>
+                                                                <button class="text-gray-400 ml-2"
+                                                                    disabled><i
+                                                                        class="fa fa-arrow-down"
+                                                                        aria-hidden="true"></i></button>
+                                                            </div> 
+
+                                                        </div>
+                                                        </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                         <div v-else>
                                             <div class="card-body">
                                                 <div class="alert alert-warning text-white">Nenhum serviço ligado
@@ -327,46 +568,6 @@ export default {
                             </div>
                         </div>
 
-                        <!-- TO DO List -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">
-                                    <i class="ion ion-clipboard mr-1"></i>
-                                    Novidades
-                                </h3>
-                            </div>
-                            <!-- /.card-header -->
-                            <div class="card-body">
-                                <ul class="todo-list" data-widget="todo-list">
-                                    <li>
-                                        <!-- drag handle -->
-                                        <span class="handle">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </span>
-                                        <!-- checkbox -->
-                                        <div class="icheck-primary d-inline ml-2">
-                                            <input type="checkbox" value="" name="todo1" id="todoCheck1">
-                                            <label for="todoCheck1"></label>
-                                        </div>
-                                        <!-- todo text -->
-                                        <span class="text">Monitoramento Grafana</span>
-                                        <!-- Emphasis label -->
-                                        <small class="badge badge-danger"><i class="far fa-clock"></i> 2
-                                            mins</small>
-                                        <!-- General tools such as edit or delete-->
-                                        <div class="tools">
-                                            <i class="fas fa-edit"></i>
-                                            <i class="fas fa-trash-o"></i>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                            <!-- /.card-body -->
-                            <div class="card-footer clearfix">
-                            </div>
-                        </div>
-                        <!-- /.card -->
                     </div>
 
                 </div>

@@ -4,14 +4,19 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Habbos;
+use App\Models\Update;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+    use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -45,7 +50,27 @@ class User extends Authenticatable
 
     public function habbos()
     {
-        return $this->hasOne(Habbos::class);
+        return $this->hasOne(Habbos::class,'user_id', 'id');
     }
 
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
+
+    /**
+    * Update model relationship
+    *
+    * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    */
+    public function updates()
+    {
+        return $this->hasMany(Update::class);
+    }
+
+    public function ChatsBans()
+    {
+        return $this->hasOne(ChatBans::class, ['user_id', 'id']);
+    }
 }

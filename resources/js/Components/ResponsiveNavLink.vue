@@ -12,6 +12,10 @@ const classes = computed(() => props.active
 
 <template>
     <Link :href="href">
-        <slot />
+    <div class="nav-link  mb-3" :class="active ? 'hover:bg-gray-900 bg-black' : 'hover:bg-gray-200 bg-gray-100'">
+        <p class="d-flex justify-start items-center" :class="active ? 'text-white' : 'text-black'">
+            <slot />
+        </p>
+    </div>
     </Link>
 </template>

@@ -23,6 +23,26 @@ class Habbos extends Model
         'domain',
         'emu_port',
         'emu_mus_port',
-        'instance_status'
+        'instance_status',
+        'arcturus_status',
+        'mysql_status',
+        'nitro_status',
+        'avatar',
+        'description',
+        'bg_card',
+        'bg_font_color',
+        'likes',
+        'users_online',
+        'players',
+        'staff_vacancy',
+        'image',
+        'events_time',
+        'inauguration_date',
+        'status',
     ];
+
+
+    public function boosts(){
+        return $this->hasMany(HabboBoosts::class, 'user_id', 'id');
+    }
 }
