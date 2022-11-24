@@ -42,6 +42,11 @@ class AdminController extends Controller
         return Inertia::render('Admin/Habbos');
     }
 
+    public function createHabbo()
+    {
+        return Inertia::render('Admin/CreateHabbo');
+    }
+
     public function manageChat()
     {
         $reportData = MessagesReport::with('user', 'userReported', 'message')->whereHas('message')->get();

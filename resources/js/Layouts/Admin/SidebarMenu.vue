@@ -51,7 +51,7 @@ export default {
 
                     <li class="nav-item">
                         <ResponsiveNavLink :href="route('admin.portal')" :active="route().current('admin.portal')">
-                            Portal
+                            <i class="nav-icon fas fa-cog" aria-hidden="true"></i> Portal
                         </ResponsiveNavLink>
                     </li>
 

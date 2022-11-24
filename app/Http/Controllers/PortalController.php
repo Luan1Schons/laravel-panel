@@ -47,6 +47,12 @@ class PortalController extends Controller
                 *, (SELECT count(id) from habbos_favorites as hf WHERE hf.habbo_id = hab.id) favorites"))
             ->where('hab.status', '0')
             ->paginate(10);
+        } elseif ($request->filter == 'pending') {
+            $habbos = DB::table('habbos as hab')
+            ->select(DB::raw("
+                *, (SELECT count(id) from habbos_favorites as hf WHERE hf.habbo_id = hab.id) favorites"))
+            ->where('hab.status', null)
+            ->paginate(10);
         } else {
             $habbos = DB::table('habbos as hab')
             ->select(DB::raw("

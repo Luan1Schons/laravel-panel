@@ -18,7 +18,7 @@ export default {
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar bg-white elevation-4 h-screen">
         <!-- Brand Logo -->
-        <a href="index3.html" class="brand-link bg-blue-500 border-b-4 border-blue-600">
+        <a href="index3.html" class="brand-link bg-black border-b-4 border-gray-900">
 
             <div class="mt-2 pb-3 mb-2 d-flex justify-center items-center">
                 <div class="rounded-full w-20 h-20 bg-white d-flex justify-center items-center p-3">

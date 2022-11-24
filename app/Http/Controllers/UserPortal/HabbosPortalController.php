@@ -38,9 +38,10 @@ class HabbosPortalController extends Controller
             $habbo->staff_vacancy = $request->input('staff_vacancy');
             $habbo->inauguration_date = now();
             $habbo->user_id = Auth::User()->id;
+            $habbo->status = $request->input('status');
             $habbo->save();
-
-            return redirect()->route('dashboard')->with('success', 'Habbo adicionado com sucesso!');
+            
+            return redirect()->route('checkrole')->with('success', 'Habbo adicionado com sucesso!');
         }
     }
 

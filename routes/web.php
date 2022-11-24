@@ -86,7 +86,10 @@ Route::group(['namespace' => 'App\Http\Controllers'], function () {
                 Route::post('/admin/portal/chat/ban', [AdminController::class, 'banUser'])->name('admin.portal.chat.ban');
                 Route::post('/admin/portal/chat/unban', [AdminController::class, 'unbanUser'])->name('admin.portal.chat.unban');
                 Route::get('/admin/portal/manage/users', [AdminController::class, 'manageUsers'])->name('admin.portal.manage.users');
+                Route::get('/admin/portal/create/habbo', [AdminController::class, 'createHabbo'])->name('admin.portal.create.habbo');
+                Route::post('/admin/portal/habbo/store', [HabbosPortalController::class, 'store'])->name('admin.portal.habbo.store');
             }
+            
         );
 
         Route::group(
@@ -105,6 +108,7 @@ Route::group(['namespace' => 'App\Http\Controllers'], function () {
                 Route::get('/habbo/actions/containers/start', [HabboActionsController::class, 'instanceStart'])->name('habbo.actions.containers.start');
                 Route::get('/habbo/actions/containers/stop', [HabboActionsController::class, 'instanceStop'])->name('habbo.actions.containers.stop');
                 Route::get('/habbo/actions/containers/metrics/{id}', [HabboActionsController::class, 'metricsContainer'])->name('habbo.actions.containers.metrics');
+                
             }
         );
 

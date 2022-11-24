@@ -43,6 +43,8 @@ export default {
                 this.fetchHabbos('all');
             }else if (tab == 3) {
                 this.fetchHabbos('inactive');
+            }else if (tab == 4) {
+                this.fetchHabbos('pending');
             }
         },
         paginate(url, label) {
@@ -66,7 +68,9 @@ export default {
     <Head title="Dashboard" />
     <AuthenticatedLayout>
         <div class="forum h-full">
-
+            <div class="flex justify-end mb-4">
+                <Link :href="route('admin.portal.create.habbo')" class="bg-black text-white px-4 py-0.5 rounded-lg">NOVO HOTEL</Link>
+            </div>
             <div class="flex justify-between items-center rounded-t-2xl pt-2">
 
                 <div
@@ -95,6 +99,14 @@ export default {
                         @click="changeTab(3)">
                         <h4 class="text-black  text-2xl font-bold text-left">INATIVOS</h4>
                     </div>
+
+                    <div class="p-2 hover:cursor-pointer rounded-tr-md"
+                        :class="tabListHabbo == 4 ? 'bg-gray-300' : 'bg-gray-50 hover:bg-gray-200'"
+                        @click="changeTab(4)">
+                        <h4 class="text-black  text-2xl font-bold text-left">PENDENTES</h4>
+                    </div>
+
+                    
 
                 </div>
 
@@ -344,6 +356,78 @@ L143.367,327.4l-43.062,184.591L262.576,414.028z" />
             </div>
 
             <div class="" v-if="tabListHabbo == 3">
+                <div class="card shadow-md"
+                    v-for="habbo, key in habbos.data" :key="key">
+                    <div class="card-body flex justify-start items-center" id="boosts">
+                        <div class="w-2/12">
+                            <div class="bg-white/50 rounded-full w-36 h-36 flex justify-center items-center relative">
+
+                                <img :src="key == 0 ? '/img/medalha-de-ouro.png' : '' || key == 1 ? '/img/medalha-de-prata.png' : '' || key == 2 ? '/img/medalha-de-bronze.png' : ''"
+                                    class="absolute w-16 -top-3 left-0" />
+
+                                <img class="rounded-full object-cover w-32 h-32"
+                                    src="https://s2.glbimg.com/nPiZW5gMk6-1XA5KNMxJtzlPI2c=/0x0:1368x768/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_08fbf48bc0524877943fe86e43087e7a/internal_photos/bs/2019/m/C/FA2uWlSTmcoVNsvgofhA/sdfdg.png" />
+                            </div>
+                        </div>
+                        <div class="w-6/12 block justify-start items-center">
+                            <p class="text-xl font-bold ml-4 text-black mb-2">{{ habbo.name }}</p>
+                            <p class="text-lg font-normal ml-4 text-black">
+                            <div class="flex justify-start items-center gap-2 text-sm mb-2">
+                                VAGAS STAFF: <span class="font-bold rounded-md">{{ habbo.staff_vacancy == 'yes' ?
+                                        'SIM' : 'NÃO'
+                                }}</span>
+                            </div>
+                            <div class="flex justify-start items-center gap-2 text-sm mb-2">
+                                EVENTOS A CADA: <span class="font-bold rounded-md">{{ habbo.events_time }}
+                                    Minutos</span>
+                            </div>
+                            </p>
+                        </div>
+                        <div class="w-4/12 flex justify-center items-center">
+
+                            <div class="flex justify-center items-center gap-2">
+
+                                <button class="bg-black text-white font-bold px-4 py-2 rounded-full"
+                                    @click="openModalHabbo(habbo)">Sobre</button>
+
+                                    <Link :href="route('admin.portal.edit.habbo', { id: habbo.id})"
+                                    class="bg-black text-white font-bold px-4 py-2 rounded-full">Editar</Link>
+                                <br>
+
+                                <p class="text-center ml-3 flex justify-center gap-1 hover:cursor-pointer hover:text-gray-700 hover:fill-gray-700"
+                                    @click="favoriteHabbo(habbo.id)">
+                                    <svg class="h-5 w-5" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg"
+                                        xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                                        viewBox="0 0 525.153 525.153" style="enable-background:new 0 0 525.153 525.153;"
+                                        xml:space="preserve">
+                                        <g>
+                                            <path d="M262.576,414.028l162.272,97.963L381.786,327.4l143.367-124.199l-188.77-15.995L262.576,13.162L188.77,187.206L0,203.201
+L143.367,327.4l-43.062,184.591L262.576,414.028z" />
+                                        </g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                        <g></g>
+                                    </svg>
+                                    <span class="text-bold text-black">{{ habbo.favorites }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="" v-if="tabListHabbo == 4">
                 <div class="card shadow-md"
                     v-for="habbo, key in habbos.data" :key="key">
                     <div class="card-body flex justify-start items-center" id="boosts">
